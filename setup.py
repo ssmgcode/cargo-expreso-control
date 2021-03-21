@@ -9,6 +9,6 @@ setup(
     ],
     entry_points='''
         [console_scripts]
-        main=main:open_file
+        main=main:save_guides_into_database
     ''',
 )

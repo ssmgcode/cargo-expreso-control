@@ -43,7 +43,7 @@ def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ", is_upp
 
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
-def open_file(filename):
+def save_guides_into_database(filename):
     df = pd.read_excel(filename)
     df = df[0:len(df) - 1]
 
