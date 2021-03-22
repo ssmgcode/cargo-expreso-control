@@ -26,16 +26,12 @@ Columns for <BusquedaGuias> spreadsheets:
 """
 
 
-def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ", is_upper_case: "bool" = False) -> "str":
+def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ") -> "str":
     words: "list[str]" = string.split(delimiter)
-    if is_upper_case:
-        capitalized_words: "list[str]" = [
-            word.lower().capitalize() for word in words
-        ]
-    else:
-        capitalized_words: "list[str]" = [
-            word.capitalize() for word in words
-        ]
+
+    capitalized_words: "list[str]" = [
+        word.lower().capitalize() for word in words
+    ]
 
     capitalized_string: "str" = " ".join(capitalized_words)
     return capitalized_string
@@ -49,6 +45,7 @@ def save_guides_into_database(filename):
     df = df[(df["NumeroGuia"].str[1:3] == "DG")
             | (df["Motivo"] == "DEVOLUCION")
             | (df["Motivo"] == "FISCALIZACION")]
+    print(df)
 
     for guide in df.index:
         # Original data
@@ -70,7 +67,7 @@ def save_guides_into_database(filename):
         # Modifications
         id = df.loc[guide, "NumeroGuia"]
         date = date.strftime("%d/%m/%Y")
-        sender = capitalize_each_word_in_string(sender, "-", True)
+        sender = capitalize_each_word_in_string(sender, "-")
         addressee = capitalize_each_word_in_string(addressee)
         reference_1 = str(reference_1).lower() if type(
             reference_1) == str else ""
