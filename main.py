@@ -103,7 +103,7 @@ def save_guide_to_database(guide):
 
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
-def save_guides_into_database(filename):
+def save_guides_to_database(filename):
     df = pd.read_excel(filename)
     df = df[0:len(df) - 1]  # To quit invalid field
     valid_df = df[
@@ -117,5 +117,17 @@ def save_guides_into_database(filename):
         | (df["Motivo"] == "FISCALIZACION")
     ]
 
+    saved_guides = []
+    guides_not_saved = []
     for guide in valid_df.index:
-        format_guide_data(guide, valid_df)
+        formatted_guide = format_guide_data(guide, valid_df)
+        is_guide_saved = save_guide_to_database(formatted_guide)
+        if is_guide_saved:
+            saved_guides.append(formatted_guide["_id"])
+        else:
+            guides_not_saved.append(formatted_guide["_id"])
+
+    for saved_guide in saved_guides:
+        print(f"{saved_guide}...✅️")
+    for guide_not_saved in guides_not_saved:
+        print(f"{guide_not_saved}...❌️")
