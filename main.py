@@ -45,12 +45,12 @@ def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ", is_upp
 @click.argument("filename", type=click.Path(exists=True))
 def save_guides_into_database(filename):
     df = pd.read_excel(filename)
-    # df = df[0:len(df) - 1]
-    df = df[df["NumeroGuia"].str[1:3] == "DG"]
-    print(df)
-    print(df.index)
+    df = df[0:len(df) - 1]  # To quit invalid field
+    df = df[(df["NumeroGuia"].str[1:3] == "DG")
+            | (df["Motivo"] == "DEVOLUCION")
+            | (df["Motivo"] == "FISCALIZACION")]
 
-    for guide in range(len(df)):
+    for guide in df.index:
         # Original data
         id = df.loc[guide, "NumeroGuia"]
         date = df.loc[guide, "Fecha"]
