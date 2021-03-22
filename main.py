@@ -1,6 +1,8 @@
 import click
 import pandas as pd
 import pymongo
+from prettytable import PrettyTable
+from colorama import Fore
 
 # No string due to we're using the default port and we're developing in local
 client = pymongo.MongoClient()
@@ -117,17 +119,29 @@ def save_guides_to_database(filename):
         | (df["Motivo"] == "FISCALIZACION")
     ]
 
-    saved_guides = []
-    guides_not_saved = []
+    saved_guides = 0
+    guides_not_saved = 0
     for guide in valid_df.index:
         formatted_guide = format_guide_data(guide, valid_df)
         is_guide_saved = save_guide_to_database(formatted_guide)
         if is_guide_saved:
-            saved_guides.append(formatted_guide["_id"])
+            saved_guides += 1
+            print(f"{formatted_guide['_id']}...✅️")
         else:
-            guides_not_saved.append(formatted_guide["_id"])
+            guides_not_saved += 1
+            print(f"{formatted_guide['_id']}...❌")
 
-    for saved_guide in saved_guides:
-        print(f"{saved_guide}...✅️")
-    for guide_not_saved in guides_not_saved:
-        print(f"{guide_not_saved}...❌️")
+    print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
+
+    if len(invalid_df) > 0:
+        print(f"{Fore.YELLOW}These guides are invalid:")
+        table = PrettyTable()
+        table.field_names = ["Guide Number", "Addressee", "Reason", "Date"]
+        for guide in invalid_df.index:
+            formatted_guide = format_guide_data(guide, invalid_df)
+            id = formatted_guide["_id"]
+            addressee = formatted_guide["addressee"]
+            reason = formatted_guide["reason"]
+            date = formatted_guide["date"]
+            table.add_row([id, addressee, reason, date])
+        print(f"{Fore.YELLOW}{table}")
