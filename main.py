@@ -1,11 +1,11 @@
 import click
 import pandas as pd
-from pymongo import MongoClient
+import pymongo
 
 # No string due to we're using the default port and we're developing in local
-client = MongoClient()
+client = pymongo.MongoClient()
 db = client["cargo-expreso-control"]
-guides = db["guides"]
+guides_collection = db["guides"]
 
 
 """
@@ -45,7 +45,10 @@ def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ", is_upp
 @click.argument("filename", type=click.Path(exists=True))
 def save_guides_into_database(filename):
     df = pd.read_excel(filename)
-    df = df[0:len(df) - 1]
+    # df = df[0:len(df) - 1]
+    df = df[df["NumeroGuia"].str[1:3] == "DG"]
+    print(df)
+    print(df.index)
 
     for guide in range(len(df)):
         # Original data
@@ -99,3 +102,7 @@ def save_guides_into_database(filename):
             "received time": received_time,
             "paid": paid
         }
+    try:
+        guide_id = guides_collection.insert_one(guide_to_save).inserted_id
+    except pymongo.errors.DuplicateKeyError:
+        print("The guide already exists in the database.")
