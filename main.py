@@ -144,4 +144,7 @@ def save_guides_to_database(filename):
             reason = formatted_guide["reason"]
             date = formatted_guide["date"]
             table.add_row([id, addressee, reason, date])
-        print(f"{Fore.YELLOW}{table}")
+        print(f"{Fore.YELLOW}{table}{Fore.RESET}")
+
+    print()
+    print(f"Analyzed document: {filename}")
