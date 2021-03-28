@@ -3,6 +3,7 @@ import pandas as pd
 import pymongo
 from prettytable import PrettyTable
 from colorama import Fore
+import time
 
 # No string due to we're using the default port and we're developing in local
 client = pymongo.MongoClient()
@@ -121,15 +122,18 @@ def save_guides_to_database(filename):
 
     saved_guides = 0
     guides_not_saved = 0
+    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
     for guide in valid_df.index:
         formatted_guide = format_guide_data(guide, valid_df)
         is_guide_saved = save_guide_to_database(formatted_guide)
+        print(f"Saving {formatted_guide['_id']}... ", end="")
         if is_guide_saved:
             saved_guides += 1
-            print(f"{formatted_guide['_id']}...✅️")
+            print(f"{Fore.GREEN}saved{Fore.RESET}️")
         else:
             guides_not_saved += 1
-            print(f"{formatted_guide['_id']}...❌")
+            print(f"{Fore.RED}already saved{Fore.RESET}")
+        time.sleep(.003)
 
     print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
 
@@ -147,4 +151,4 @@ def save_guides_to_database(filename):
         print(f"{Fore.YELLOW}{table}{Fore.RESET}")
 
     print()
-    print(f"Analyzed document: {filename}")
+    print(f"{Fore.LIGHTBLACK_EX}Analyzed document: {filename}{Fore.RESET}")
