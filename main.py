@@ -133,7 +133,7 @@ def save_guides_to_database(filename):
         else:
             guides_not_saved += 1
             print(f"{Fore.RED}already saved{Fore.RESET}")
-        time.sleep(.003)
+        time.sleep(.0025)
 
     print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
 
