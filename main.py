@@ -152,3 +152,10 @@ def save_guides_to_database(filename):
 
     print()
     print(f"{Fore.LIGHTBLACK_EX}Analyzed document: {filename}{Fore.RESET}")
+
+
+@click.command()
+@click.argument("filename", type=click.Path(exists=True))
+def check_guides_paid(filename):
+    df = pd.read_excel(filename)
+    print(df)
