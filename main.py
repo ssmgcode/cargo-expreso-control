@@ -158,4 +158,16 @@ def save_guides_to_database(filename):
 @click.argument("filename", type=click.Path(exists=True))
 def check_guides_paid(filename):
     df = pd.read_excel(filename)
-    print(df)
+    date = df.iloc[4, 4].strftime("%d/%m/%Y")
+    credit_code = df.iloc[5, 4]
+    client = df.iloc[6, 4]
+    table = PrettyTable()
+    table.title = "Metadata"
+    table.header = False
+    table.add_rows([
+        ["Date", date],
+        ["Credit Code", credit_code],
+        ["Client", client]
+    ])
+    table.align = "l"
+    print(f"{Fore.LIGHTBLACK_EX}{table}{Fore.RESET}")
