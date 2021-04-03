@@ -8,7 +8,6 @@ import time
 # No string due to we're using the default port and we're developing in local
 client = pymongo.MongoClient()
 db = client["cargo-expreso-control"]
-guides_collection = db["guides"]
 
 
 """
@@ -96,9 +95,9 @@ def format_guide_data(guide, df):
     return formatted_guide
 
 
-def save_guide_to_database(guide):
+def save_guide_to_database(guide, collection):
     try:
-        guides_collection.insert_one(guide)
+        collection.insert_one(guide)
         return True
     except pymongo.errors.DuplicateKeyError:
         return False
@@ -107,6 +106,7 @@ def save_guide_to_database(guide):
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 def save_guides_to_database(filename):
+    guides_collection = db["guides"]
     df = pd.read_excel(filename)
     df = df[0:len(df) - 1]  # To quit invalid field
     valid_df = df[
@@ -125,7 +125,8 @@ def save_guides_to_database(filename):
     print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
     for guide in valid_df.index:
         formatted_guide = format_guide_data(guide, valid_df)
-        is_guide_saved = save_guide_to_database(formatted_guide)
+        is_guide_saved = save_guide_to_database(
+            formatted_guide, guides_collection)
         print(f"Saving {formatted_guide['_id']}... ", end="")
         if is_guide_saved:
             saved_guides += 1
@@ -171,3 +172,9 @@ def check_guides_paid(filename):
     ])
     table.align = "l"
     print(f"{Fore.LIGHTBLACK_EX}{table}{Fore.RESET}")
+
+    columns = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
+    guides_df = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
+    guides_df.columns = columns
+    guides_df.columns.name = None
+    print(guides_df)
