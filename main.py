@@ -155,9 +155,42 @@ def save_guides_to_database(filename):
     print(f"{Fore.LIGHTBLACK_EX}Analyzed document: {filename}{Fore.RESET}")
 
 
+def format_paid_guide_data(guide, df):
+    # Original data
+    guide_number: "str" = df.loc[guide, "GUIA"]
+    pieces: "int" = df.loc[guide, "PIEZAS"]
+    status: "str" = df.loc[guide, "ESTADO"]
+    cod_amount: "float" = df.loc[guide, "MONTO COD"]
+    cash: "float" = df.loc[guide, "EFECTIVO"]
+    commission: "str" = df.loc[guide, "COMISION"]
+    guide_type: "str" = df.loc[guide, "TIPO GUIA"]
+    commission_value: "float" = df.loc[guide, "VALOR COMISION"]
+    settled_amount: "float" = df.loc[guide, "MONTO LIQUIDADO"]
+    operation: "str" = df.loc[guide, "OPERACION"]
+    authorization: "str" = df.loc[guide, "AUTORIZACION"]
+    account_number: "str" = df.loc[guide, "NUMERO DE CUENTA"]
+
+    formatted_guide: "dict[str, any]" = {
+        "_id": guide_number,
+        "pieces": pieces,
+        "status": status,
+        "cod amount": cod_amount,
+        "cash": cash,
+        "commission": commission,
+        "guide type": guide_type,
+        "commission value": commission_value,
+        "settled amount": settled_amount,
+        "operation": operation,
+        "authorization": authorization,
+        "account number": account_number,
+    }
+    return formatted_guide
+
+
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 def check_guides_paid(filename):
+    guides_collection = db["paid_guides"]
     df = pd.read_excel(filename)
     date = df.iloc[4, 4].strftime("%d/%m/%Y")
     credit_code = df.iloc[5, 4]
@@ -173,8 +206,27 @@ def check_guides_paid(filename):
     table.align = "l"
     print(f"{Fore.LIGHTBLACK_EX}{table}{Fore.RESET}")
 
-    columns = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
-    guides_df = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
+    columns: "pd.DataFrame" = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
+    guides_df: "pd.DataFrame" = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
     guides_df.columns = columns
     guides_df.columns.name = None
-    print(guides_df)
+
+    saved_guides = 0
+    guides_not_saved = 0
+    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
+    for guide in guides_df.index:
+        if guide < guides_df.last_valid_index():
+            formatted_guide = format_paid_guide_data(guide, guides_df)
+            is_guide_saved = save_guide_to_database(
+                formatted_guide, guides_collection)
+            print(f"Saving {formatted_guide['_id']}... ", end="")
+            if is_guide_saved:
+                saved_guides += 1
+                print(f"{Fore.GREEN}saved{Fore.RESET}️")
+            else:
+                guides_not_saved += 1
+                print(f"{Fore.RED}already saved{Fore.RESET}")
+            print(db["guides"].find_one({"_id": formatted_guide["_id"]}))
+            time.sleep(.0025)
+
+    print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
