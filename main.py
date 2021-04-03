@@ -229,42 +229,59 @@ def check_guides_paid(filename):
         cash = 0
         commission_value = 0
         settled_amount = 0
-        cod_amount += formatted_guide["cod amount"]
-        cash += formatted_guide["cash"]
-        commission_value += formatted_guide["commission value"]
-        settled_amount += formatted_guide["settled amount"]
         print(f"Saving {formatted_guide['_id']}... ", end="")
-        is_guide_saved = save_guide_to_database(
-            formatted_guide, paid_guides_collection)
-        if is_guide_saved:
-            print(f"{Fore.GREEN}saved{Fore.RESET}️", end="")
-            saved_guides += 1
+        is_guide_in_general_collection = find_guide(
+            formatted_guide["_id"], general_guides_collection)
+
+        if is_guide_in_general_collection:
+
+            cod_amount += formatted_guide["cod amount"]
+            cash += formatted_guide["cash"]
+            commission_value += formatted_guide["commission value"]
+            settled_amount += formatted_guide["settled amount"]
+
+            is_guide_saved = save_guide_to_database(
+                formatted_guide, paid_guides_collection
+            )
+
+            if is_guide_saved:
+                print(f"{Fore.GREEN}saved{Fore.RESET}️", end="")
+                saved_guides += 1
+            else:
+                guides_not_saved += 1
+                print(f"{Fore.RED}already saved{Fore.RESET}", end="")
+
+            general_guides_collection.update_one(
+                {"_id": formatted_guide["_id"]}, {"$set": {"paid": True}}
+            )
+            print(f" {Fore.CYAN}<Marked as paid>{Fore.RESET}", end="")
+            print(f" ({check_commission(formatted_guide)})")
         else:
-            guides_not_saved += 1
-            print(f"{Fore.RED}already saved{Fore.RESET}", end="")
-        print(f" ({check_commission(formatted_guide)})")
+            print(
+                f"{Fore.MAGENTA}guide not found in general collection{Fore.RESET}"
+            )
         time.sleep(.0025)
     print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
 
-    table = PrettyTable()
-    table.title = "RESUME"
-    table.field_names = [
-        "COD Amount",
-        "Cash",
-        "Commission Value",
-        f"{Fore.LIGHTGREEN_EX}Settled Amount{Fore.RESET}"
-    ]
-    table.add_row(
-        [
-            cod_amount,
-            cash,
-            commission_value,
-            f"{Fore.LIGHTGREEN_EX}{settled_amount}{Fore.RESET}"
+    if is_guide_in_general_collection:
+        table = PrettyTable()
+        table.title = "RESUME"
+        table.field_names = [
+            "COD Amount",
+            "Cash",
+            "Commission Value",
+            f"{Fore.LIGHTGREEN_EX}Settled Amount{Fore.RESET}"
         ]
-    )
-    print(f"{table}")
+        table.add_row(
+            [
+                cod_amount,
+                cash,
+                commission_value,
+                f"{Fore.LIGHTGREEN_EX}{settled_amount}{Fore.RESET}"
+            ]
+        )
+        print(f"{table}")
 
 
-def find_guide(guide_number):
-    found_guide: "dict | None" = general_guides_collection.find_one_and_update(
-        {"_id": guide_number})
+def find_guide(guide_number: str, collection: collection.Collection):
+    return collection.find_one({"_id": guide_number})
