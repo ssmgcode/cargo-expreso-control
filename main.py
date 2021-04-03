@@ -98,21 +98,34 @@ def format_guide_data(guide, df):
     return formatted_guide
 
 
-def save_guide_to_database(guide: "dict[str, any]", df: pd.DataFrame, format_guide, collection: collection.Collection):
+def save_guide_to_database(df: pd.DataFrame, format_guide, collection: collection.Collection, is_paid_guide=False):
     saved_guides = 0
     guides_not_saved = 0
     print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
     for guide in df.index:
         formatted_guide = format_guide(guide, df)
+
         print(f"Saving {formatted_guide['_id']}... ", end="")
         try:
             collection.insert_one(formatted_guide)
+            print(f"{Fore.GREEN}saved{Fore.RESET}️", end="")
+            saved_guides += 1
         except pymongo.errors.DuplicateKeyError:
             guides_not_saved += 1
-            print(f"{Fore.RED}already saved{Fore.RESET}")
-        saved_guides += 1
-        print(f"{Fore.GREEN}saved{Fore.RESET}️")
+            print(f"{Fore.RED}already saved{Fore.RESET}", end="")
+        print(
+            f" ({check_commission(formatted_guide)})") if is_paid_guide else print()
         time.sleep(.0025)
+    print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
+
+
+def check_commission(guide):
+    commission_percentage = float(guide["commission"][:-1])
+    commission_value = commission_percentage * guide["cod amount"] / 100
+    if commission_value == guide["commission value"]:
+        return f"{Fore.GREEN}Right commission{Fore.RESET}"
+    else:
+        return f"{Fore.RED}Wrong commission{Fore.RESET}"
 
 
 @click.command()
@@ -131,23 +144,10 @@ def save_guides_to_database(filename):
         | (df["Motivo"] == "FISCALIZACION")
     ]
 
-    saved_guides = 0
-    guides_not_saved = 0
-    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
-    for guide in valid_df.index:
-        formatted_guide = format_guide_data(guide, valid_df)
-        is_guide_saved = save_guide_to_database(
-            formatted_guide, general_guides_collection)
-        print(f"Saving {formatted_guide['_id']}... ", end="")
-        if is_guide_saved:
-            saved_guides += 1
-            print(f"{Fore.GREEN}saved{Fore.RESET}️")
-        else:
-            guides_not_saved += 1
-            print(f"{Fore.RED}already saved{Fore.RESET}")
-        time.sleep(.0025)
-
-    print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
+    save_guide_to_database(
+        valid_df, format_guide_data,
+        general_guides_collection
+    )
 
     if len(invalid_df) > 0:
         print(f"{Fore.YELLOW}These guides are invalid:")
@@ -217,8 +217,12 @@ def check_guides_paid(filename):
     print(f"{Fore.LIGHTBLACK_EX}{table}{Fore.RESET}")
 
     columns: pd.DataFrame = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
-    guides_df: pd.DataFrame = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
-    guides_df = guides_df[0:len(df) - 1]  # To quit invalid field
-    print(guides_df)
+    guides_df: pd.DataFrame = df.iloc[9:-1, 1:].loc[:, df.loc[8].notna()]
     guides_df.columns = columns
     guides_df.columns.name = None
+
+    save_guide_to_database(
+        guides_df, format_paid_guide_data,
+        paid_guides_collection,
+        True
+    )
