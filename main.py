@@ -98,43 +98,12 @@ def format_guide_data(guide, df):
     return formatted_guide
 
 
-def save_guide_to_database(df: pd.DataFrame, format_guide, collection: collection.Collection, is_paid_guide=False):
-    saved_guides = 0
-    guides_not_saved = 0
-    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
-    for guide in df.index:
-        formatted_guide = format_guide(guide, df)
-
-        cod_amount = 0
-        cash = 0
-        commission_value = 0
-        settled_amount = 0
-        if is_paid_guide:
-            cod_amount += formatted_guide["cod amount"]
-            cash += formatted_guide["cash"]
-            commission_value += formatted_guide["commission value"]
-            settled_amount += formatted_guide["settled amount"]
-            find_guide(formatted_guide["_id"])
-
-        print(f"Saving {formatted_guide['_id']}... ", end="")
-        try:
-            collection.insert_one(formatted_guide)
-            print(f"{Fore.GREEN}saved{Fore.RESET}️", end="")
-            saved_guides += 1
-        except pymongo.errors.DuplicateKeyError:
-            guides_not_saved += 1
-            print(f"{Fore.RED}already saved{Fore.RESET}", end="")
-        print(
-            f" ({check_commission(formatted_guide)})") if is_paid_guide else print()
-        time.sleep(.0025)
-    print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
-
-    return {
-        "cod amount": cod_amount,
-        "cash": cash,
-        "commission value": commission_value,
-        "settled amount": settled_amount,
-    }
+def save_guide_to_database(guide, collection: collection.Collection):
+    try:
+        collection.insert_one(guide)
+        return True
+    except pymongo.errors.DuplicateKeyError:
+        return False
 
 
 def check_commission(guide):
@@ -162,10 +131,22 @@ def save_guides_to_database(filename):
         | (df["Motivo"] == "FISCALIZACION")
     ]
 
-    save_guide_to_database(
-        valid_df, format_guide_data,
-        general_guides_collection
-    )
+    saved_guides = 0
+    guides_not_saved = 0
+    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
+    for guide in valid_df.index:
+        formatted_guide = format_guide_data(guide, valid_df)
+        print(f"Saving {formatted_guide['_id']}... ", end="")
+        is_guide_saved = save_guide_to_database(
+            formatted_guide, general_guides_collection)
+        if is_guide_saved:
+            print(f"{Fore.GREEN}saved{Fore.RESET}️")
+            saved_guides += 1
+        else:
+            guides_not_saved += 1
+            print(f"{Fore.RED}already saved{Fore.RESET}")
+        time.sleep(.0025)
+    print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
 
     if len(invalid_df) > 0:
         print(f"{Fore.YELLOW}These guides are invalid:")
@@ -239,11 +220,31 @@ def check_guides_paid(filename):
     guides_df.columns = columns
     guides_df.columns.name = None
 
-    resume = save_guide_to_database(
-        guides_df, format_paid_guide_data,
-        paid_guides_collection,
-        True
-    )
+    saved_guides = 0
+    guides_not_saved = 0
+    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
+    for guide in guides_df.index:
+        formatted_guide = format_paid_guide_data(guide, guides_df)
+        cod_amount = 0
+        cash = 0
+        commission_value = 0
+        settled_amount = 0
+        cod_amount += formatted_guide["cod amount"]
+        cash += formatted_guide["cash"]
+        commission_value += formatted_guide["commission value"]
+        settled_amount += formatted_guide["settled amount"]
+        print(f"Saving {formatted_guide['_id']}... ", end="")
+        is_guide_saved = save_guide_to_database(
+            formatted_guide, paid_guides_collection)
+        if is_guide_saved:
+            print(f"{Fore.GREEN}saved{Fore.RESET}️", end="")
+            saved_guides += 1
+        else:
+            guides_not_saved += 1
+            print(f"{Fore.RED}already saved{Fore.RESET}", end="")
+        print(f" ({check_commission(formatted_guide)})")
+        time.sleep(.0025)
+    print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
 
     table = PrettyTable()
     table.title = "RESUME"
@@ -255,10 +256,10 @@ def check_guides_paid(filename):
     ]
     table.add_row(
         [
-            resume["cod amount"],
-            resume["cash"],
-            resume["commission value"],
-            f"{Fore.LIGHTGREEN_EX}{resume['settled amount']}{Fore.RESET}"
+            cod_amount,
+            cash,
+            commission_value,
+            f"{Fore.LIGHTGREEN_EX}{settled_amount}{Fore.RESET}"
         ]
     )
     print(f"{table}")
