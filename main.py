@@ -8,6 +8,8 @@ import time
 # No string due to we're using the default port and we're developing in local
 client = pymongo.MongoClient()
 db = client["cargo-expreso-control"]
+general_guides_collection = db["guides"]
+paid_guides_collection = db["paid_guides"]
 
 
 """
@@ -106,7 +108,6 @@ def save_guide_to_database(guide, collection):
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 def save_guides_to_database(filename):
-    guides_collection = db["guides"]
     df = pd.read_excel(filename)
     df = df[0:len(df) - 1]  # To quit invalid field
     valid_df = df[
@@ -126,7 +127,7 @@ def save_guides_to_database(filename):
     for guide in valid_df.index:
         formatted_guide = format_guide_data(guide, valid_df)
         is_guide_saved = save_guide_to_database(
-            formatted_guide, guides_collection)
+            formatted_guide, general_guides_collection)
         print(f"Saving {formatted_guide['_id']}... ", end="")
         if is_guide_saved:
             saved_guides += 1
@@ -190,7 +191,6 @@ def format_paid_guide_data(guide, df):
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
 def check_guides_paid(filename):
-    guides_collection = db["paid_guides"]
     df = pd.read_excel(filename)
     date = df.iloc[4, 4].strftime("%d/%m/%Y")
     credit_code = df.iloc[5, 4]
@@ -218,7 +218,7 @@ def check_guides_paid(filename):
         if guide < guides_df.last_valid_index():
             formatted_guide = format_paid_guide_data(guide, guides_df)
             is_guide_saved = save_guide_to_database(
-                formatted_guide, guides_collection)
+                formatted_guide, paid_guides_collection)
             print(f"Saving {formatted_guide['_id']}... ", end="")
             if is_guide_saved:
                 saved_guides += 1
