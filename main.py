@@ -285,3 +285,74 @@ def check_guides_paid(filename):
 
 def find_guide(guide_number: str, collection: collection.Collection):
     return collection.find_one({"_id": guide_number})
+
+
+@click.command()
+@click.option('-g', '--guide')
+def find_paid_guides(guide):
+    if guide:
+        guides = general_guides_collection.find({"_id": guide, "paid": True})
+    else:
+        guides = general_guides_collection.find({"paid": True})
+    paid_guides = paid_guides_collection.find()
+    table = PrettyTable()
+    table.title = "PAID GUIDES"
+    table.field_names = [
+        "ID",
+        "Date",
+        "Addressee",
+        "Reference 1",
+        "Status",
+        "Reason",
+        "Destination",
+        "Received By",
+        "Received Date",
+        "Authorization",
+        "Account Number",
+        "COD Amount",
+        "Commission Value",
+        "Settled Amount"
+    ]
+
+    guide: "dict[str, any]"
+    cod_amount = 0
+    commission_value = 0
+    settled_amount = 0
+    for guide in guides:
+        for paid_guide in paid_guides:
+            table.add_row([
+                guide["_id"],
+                guide["date"],
+                guide["addressee"],
+                guide["reference 1"],
+                guide["status"],
+                guide["reason"],
+                guide["destination"],
+                guide["received by"],
+                guide["received date"],
+                paid_guide["authorization"],
+                paid_guide["account number"],
+                paid_guide["cod amount"],
+                paid_guide["commission value"],
+                paid_guide["settled amount"],
+            ])
+            cod_amount += paid_guide["cod amount"]
+            commission_value += paid_guide["commission value"]
+            settled_amount += paid_guide["settled amount"]
+    table.add_row([
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        "",
+        f"{Fore.GREEN}{cod_amount}{Fore.RESET}",
+        f"{Fore.GREEN}{commission_value}{Fore.RESET}",
+        f"{Fore.GREEN}{settled_amount}{Fore.RESET}",
+    ])
+    print(table)

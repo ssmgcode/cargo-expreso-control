@@ -11,5 +11,6 @@ setup(
         [console_scripts]
         save-guides-to-database=main:save_guides_to_database
         check-guides-paid=main:check_guides_paid
+        find-paid-guides=main:find_paid_guides
     """,
 )
