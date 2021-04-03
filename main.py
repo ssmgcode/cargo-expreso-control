@@ -4,6 +4,7 @@ import pymongo
 from prettytable import PrettyTable
 from colorama import Fore
 import time
+from pymongo import collection
 
 # No string due to we're using the default port and we're developing in local
 client = pymongo.MongoClient()
@@ -30,14 +31,14 @@ Columns for <BusquedaGuias> spreadsheets:
 """
 
 
-def capitalize_each_word_in_string(string: "str", delimiter: "str" = " ") -> "str":
+def capitalize_each_word_in_string(string: str, delimiter: str = " ") -> str:
     words: "list[str]" = string.split(delimiter)
 
     capitalized_words: "list[str]" = [
         word.lower().capitalize() for word in words
     ]
 
-    capitalized_string: "str" = " ".join(capitalized_words)
+    capitalized_string: str = " ".join(capitalized_words)
     return capitalized_string
 
 
@@ -97,12 +98,21 @@ def format_guide_data(guide, df):
     return formatted_guide
 
 
-def save_guide_to_database(guide, collection):
-    try:
-        collection.insert_one(guide)
-        return True
-    except pymongo.errors.DuplicateKeyError:
-        return False
+def save_guide_to_database(guide: "dict[str, any]", df: pd.DataFrame, format_guide, collection: collection.Collection):
+    saved_guides = 0
+    guides_not_saved = 0
+    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
+    for guide in df.index:
+        formatted_guide = format_guide(guide, df)
+        print(f"Saving {formatted_guide['_id']}... ", end="")
+        try:
+            collection.insert_one(formatted_guide)
+        except pymongo.errors.DuplicateKeyError:
+            guides_not_saved += 1
+            print(f"{Fore.RED}already saved{Fore.RESET}")
+        saved_guides += 1
+        print(f"{Fore.GREEN}saved{Fore.RESET}️")
+        time.sleep(.0025)
 
 
 @click.command()
@@ -158,18 +168,18 @@ def save_guides_to_database(filename):
 
 def format_paid_guide_data(guide, df):
     # Original data
-    guide_number: "str" = df.loc[guide, "GUIA"]
-    pieces: "int" = df.loc[guide, "PIEZAS"]
-    status: "str" = df.loc[guide, "ESTADO"]
-    cod_amount: "float" = df.loc[guide, "MONTO COD"]
-    cash: "float" = df.loc[guide, "EFECTIVO"]
-    commission: "str" = df.loc[guide, "COMISION"]
-    guide_type: "str" = df.loc[guide, "TIPO GUIA"]
-    commission_value: "float" = df.loc[guide, "VALOR COMISION"]
-    settled_amount: "float" = df.loc[guide, "MONTO LIQUIDADO"]
-    operation: "str" = df.loc[guide, "OPERACION"]
-    authorization: "str" = df.loc[guide, "AUTORIZACION"]
-    account_number: "str" = df.loc[guide, "NUMERO DE CUENTA"]
+    guide_number: str = df.loc[guide, "GUIA"]
+    pieces: int = df.loc[guide, "PIEZAS"]
+    status: str = df.loc[guide, "ESTADO"]
+    cod_amount: float = df.loc[guide, "MONTO COD"]
+    cash: float = df.loc[guide, "EFECTIVO"]
+    commission: str = df.loc[guide, "COMISION"]
+    guide_type: str = df.loc[guide, "TIPO GUIA"]
+    commission_value: float = df.loc[guide, "VALOR COMISION"]
+    settled_amount: float = df.loc[guide, "MONTO LIQUIDADO"]
+    operation: str = df.loc[guide, "OPERACION"]
+    authorization: str = df.loc[guide, "AUTORIZACION"]
+    account_number: str = df.loc[guide, "NUMERO DE CUENTA"]
 
     formatted_guide: "dict[str, any]" = {
         "_id": guide_number,
@@ -206,27 +216,9 @@ def check_guides_paid(filename):
     table.align = "l"
     print(f"{Fore.LIGHTBLACK_EX}{table}{Fore.RESET}")
 
-    columns: "pd.DataFrame" = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
-    guides_df: "pd.DataFrame" = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
+    columns: pd.DataFrame = df.iloc[8:, 1:].loc[8, df.loc[8].notna()]
+    guides_df: pd.DataFrame = df.iloc[9:, 1:].loc[:, df.loc[8].notna()]
+    guides_df = guides_df[0:len(df) - 1]  # To quit invalid field
+    print(guides_df)
     guides_df.columns = columns
     guides_df.columns.name = None
-
-    saved_guides = 0
-    guides_not_saved = 0
-    print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
-    for guide in guides_df.index:
-        if guide < guides_df.last_valid_index():
-            formatted_guide = format_paid_guide_data(guide, guides_df)
-            is_guide_saved = save_guide_to_database(
-                formatted_guide, paid_guides_collection)
-            print(f"Saving {formatted_guide['_id']}... ", end="")
-            if is_guide_saved:
-                saved_guides += 1
-                print(f"{Fore.GREEN}saved{Fore.RESET}️")
-            else:
-                guides_not_saved += 1
-                print(f"{Fore.RED}already saved{Fore.RESET}")
-            print(db["guides"].find_one({"_id": formatted_guide["_id"]}))
-            time.sleep(.0025)
-
-    print(f"{saved_guides} guides were saved and {guides_not_saved} are already saved from this document\n")
