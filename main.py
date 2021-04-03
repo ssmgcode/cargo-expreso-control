@@ -105,6 +105,17 @@ def save_guide_to_database(df: pd.DataFrame, format_guide, collection: collectio
     for guide in df.index:
         formatted_guide = format_guide(guide, df)
 
+        cod_amount = 0
+        cash = 0
+        commission_value = 0
+        settled_amount = 0
+        if is_paid_guide:
+            cod_amount += formatted_guide["cod amount"]
+            cash += formatted_guide["cash"]
+            commission_value += formatted_guide["commission value"]
+            settled_amount += formatted_guide["settled amount"]
+            find_guide(formatted_guide["_id"])
+
         print(f"Saving {formatted_guide['_id']}... ", end="")
         try:
             collection.insert_one(formatted_guide)
@@ -117,6 +128,13 @@ def save_guide_to_database(df: pd.DataFrame, format_guide, collection: collectio
             f" ({check_commission(formatted_guide)})") if is_paid_guide else print()
         time.sleep(.0025)
     print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
+
+    return {
+        "cod amount": cod_amount,
+        "cash": cash,
+        "commission value": commission_value,
+        "settled amount": settled_amount,
+    }
 
 
 def check_commission(guide):
@@ -221,8 +239,31 @@ def check_guides_paid(filename):
     guides_df.columns = columns
     guides_df.columns.name = None
 
-    save_guide_to_database(
+    resume = save_guide_to_database(
         guides_df, format_paid_guide_data,
         paid_guides_collection,
         True
     )
+
+    table = PrettyTable()
+    table.title = "RESUME"
+    table.field_names = [
+        "COD Amount",
+        "Cash",
+        "Commission Value",
+        f"{Fore.LIGHTGREEN_EX}Settled Amount{Fore.RESET}"
+    ]
+    table.add_row(
+        [
+            resume["cod amount"],
+            resume["cash"],
+            resume["commission value"],
+            f"{Fore.LIGHTGREEN_EX}{resume['settled amount']}{Fore.RESET}"
+        ]
+    )
+    print(f"{table}")
+
+
+def find_guide(guide_number):
+    found_guide: "dict | None" = general_guides_collection.find_one_and_update(
+        {"_id": guide_number})
