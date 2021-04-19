@@ -173,7 +173,7 @@ def format_paid_guide_data(guide, df):
     cod_amount: float = df.loc[guide, "MONTO COD"]
     cash: float = df.loc[guide, "EFECTIVO"]
     commission: str = df.loc[guide, "COMISION"]
-    guide_type: str = df.loc[guide, "TIPO GUIA"]
+    # guide_type: str = df.loc[guide, "TIPO GUIA"]
     commission_value: float = df.loc[guide, "VALOR COMISION"]
     settled_amount: float = df.loc[guide, "MONTO LIQUIDADO"]
     operation: str = df.loc[guide, "OPERACION"]
@@ -187,7 +187,7 @@ def format_paid_guide_data(guide, df):
         "cod amount": cod_amount,
         "cash": cash,
         "commission": commission,
-        "guide type": guide_type,
+        # "guide type": guide_type,
         "commission value": commission_value,
         "settled amount": settled_amount,
         "operation": operation,
@@ -222,14 +222,15 @@ def check_guides_paid(filename):
 
     saved_guides = 0
     guides_not_saved = 0
+    cod_amount = 0
+    cash = 0
+    commission_value = 0
+    settled_amount = 0
     print(f"{Fore.CYAN}Start saving guides:{Fore.RESET}")
     for guide in guides_df.index:
         formatted_guide = format_paid_guide_data(guide, guides_df)
-        cod_amount = 0
-        cash = 0
-        commission_value = 0
-        settled_amount = 0
-        print(f"Saving {formatted_guide['_id']}... ", end="")
+
+        print(f"Saving {formatted_guide['_id']} ... ", end="")
         is_guide_in_general_collection = find_guide(
             formatted_guide["_id"], general_guides_collection)
 
@@ -281,6 +282,7 @@ def check_guides_paid(filename):
             ]
         )
         print(f"{table}")
+    print(f"{Fore.LIGHTBLACK_EX}Analyzed document: {filename}{Fore.RESET}")
 
 
 def find_guide(guide_number: str, collection: collection.Collection):
