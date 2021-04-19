@@ -117,10 +117,10 @@ def save_guide_to_database(guide, collection: collection.Collection):
 def check_commission(guide):
     commission_percentage = float(guide["commission"][:-1])
     commission_value = commission_percentage * guide["cod amount"] / 100
-    if commission_value == guide["commission value"]:
-        return f"{Fore.GREEN}Right commission{Fore.RESET}"
+    if commission_value == guide["commission value"] and commission_percentage == 4.0:
+        return f"{Fore.GREEN}Right commission ({commission_percentage}){Fore.RESET}"
     else:
-        return f"{Fore.RED}Wrong commission{Fore.RESET}"
+        return f"{Fore.RED}Wrong commission ({commission_percentage}){Fore.RESET}"
 
 
 @click.command()
@@ -237,7 +237,8 @@ def check_paid_guides(filename):
     for guide in guides_df.index:
         formatted_guide = format_paid_guide_data(guide, guides_df)
 
-        print(f"Saving {formatted_guide['_id']} ... ", end="")
+        print(
+            f"Saving {formatted_guide['_id']} (Q{formatted_guide['cod amount']}) ...  ", end="")
         is_guide_in_general_collection = find_guide(
             formatted_guide["_id"], general_guides_collection)
 
