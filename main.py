@@ -376,6 +376,4 @@ def find_paid_guides(guide):
         f"{Fore.GREEN}{settled_amount:.2f}{Fore.RESET}",
     ])
     done = True
-    # print()
     print(f"\r{table}")
-    # sys.stdout.write('\r' + table.__str__())
