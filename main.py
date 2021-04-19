@@ -295,18 +295,14 @@ def find_guide(guide_number: str, collection: collection.Collection):
 @click.command()
 @click.option('-g', '--guide')
 def find_paid_guides(guide):
-    if guide:
-        guides = general_guides_collection.find({"_id": guide, "paid": True})
-    else:
-        guides = general_guides_collection.find({"paid": True})
     paid_guides = paid_guides_collection.find()
     table = PrettyTable()
-    table.title = "PAID GUIDES"
+    table.title = f"PAID GUIDES {paid_guides.count()}"
     table.field_names = [
+        "#",
         "ID",
         "Date",
         "Addressee",
-        "Reference 1",
         "Status",
         "Reason",
         "Destination",
@@ -318,32 +314,34 @@ def find_paid_guides(guide):
         "Commission Value",
         "Settled Amount"
     ]
-
-    guide: "dict[str, any]"
+    general_guide: "dict[str, any]"
     cod_amount = 0
     commission_value = 0
     settled_amount = 0
-    for guide in guides:
-        for paid_guide in paid_guides:
-            table.add_row([
-                guide["_id"],
-                guide["date"],
-                guide["addressee"],
-                guide["reference 1"],
-                guide["status"],
-                guide["reason"],
-                guide["destination"],
-                guide["received by"],
-                guide["received date"],
-                paid_guide["authorization"],
-                paid_guide["account number"],
-                paid_guide["cod amount"],
-                paid_guide["commission value"],
-                paid_guide["settled amount"],
-            ])
-            cod_amount += paid_guide["cod amount"]
-            commission_value += paid_guide["commission value"]
-            settled_amount += paid_guide["settled amount"]
+    counter = 1
+    for paid_guide in paid_guides:
+        general_guide = general_guides_collection.find_one(paid_guide["_id"])
+        # print(general_guide)
+        table.add_row([
+            counter,
+            general_guide["_id"],
+            general_guide["date"],
+            general_guide["addressee"],
+            general_guide["status"],
+            general_guide["reason"],
+            general_guide["destination"],
+            general_guide["received by"],
+            general_guide["received date"],
+            paid_guide["authorization"],
+            paid_guide["account number"],
+            paid_guide["cod amount"],
+            paid_guide["commission value"],
+            paid_guide["settled amount"],
+        ])
+        cod_amount += paid_guide["cod amount"]
+        commission_value += paid_guide["commission value"]
+        settled_amount += paid_guide["settled amount"]
+        counter += 1
     table.add_row([
         "",
         "",
