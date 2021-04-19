@@ -203,7 +203,7 @@ def format_paid_guide_data(guide, df):
 
 @click.command()
 @click.argument("filename", type=click.Path(exists=True))
-def check_guides_paid(filename):
+def check_paid_guides(filename):
     df = pd.read_excel(filename)
     date = df.iloc[4, 4].strftime("%d/%m/%Y")
     credit_code = df.iloc[5, 4]
@@ -278,10 +278,10 @@ def check_guides_paid(filename):
         ]
         table.add_row(
             [
-                cod_amount,
-                cash,
-                commission_value,
-                f"{Fore.LIGHTGREEN_EX}{settled_amount}{Fore.RESET}"
+                f"{cod_amount:.2f}",
+                f"{cash:.2f}",
+                f"{commission_value:.2f}",
+                f"{Fore.LIGHTGREEN_EX}{settled_amount:.2f}{Fore.RESET}"
             ]
         )
         print(f"{table}")
@@ -356,8 +356,8 @@ def find_paid_guides(guide):
         "",
         "",
         "",
-        f"{Fore.GREEN}{cod_amount}{Fore.RESET}",
-        f"{Fore.GREEN}{commission_value}{Fore.RESET}",
-        f"{Fore.GREEN}{settled_amount}{Fore.RESET}",
+        f"{Fore.GREEN}{cod_amount:.2f}{Fore.RESET}",
+        f"{Fore.GREEN}{commission_value:.2f}{Fore.RESET}",
+        f"{Fore.GREEN}{settled_amount:.2f}{Fore.RESET}",
     ])
     print(table)
