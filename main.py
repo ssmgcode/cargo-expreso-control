@@ -9,7 +9,6 @@ from dotenv import load_dotenv
 import itertools
 import threading
 import time
-import sys
 
 load_dotenv()
 
@@ -305,8 +304,7 @@ def find_paid_guides(guide):
         for c in itertools.cycle(['|', '/', '-', '\\']):
             if done:
                 break
-            sys.stdout.write('\rLoading ' + c)
-            sys.stdout.flush()
+            print(f"\rLoading {c}", end="")
             time.sleep(0.1)
     t = threading.Thread(target=animate)
     t.start()
@@ -378,5 +376,6 @@ def find_paid_guides(guide):
         f"{Fore.GREEN}{settled_amount:.2f}{Fore.RESET}",
     ])
     done = True
-    print()
-    print(table)
+    # print()
+    print(f"\r{table}")
+    # sys.stdout.write('\r' + table.__str__())
