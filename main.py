@@ -5,9 +5,16 @@ from prettytable import PrettyTable
 from colorama import Fore
 import time
 from pymongo import collection
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # No string due to we're using the default port and we're developing in local
-client = pymongo.MongoClient()
+# client = pymongo.MongoClient()
+mongo_uri = os.getenv('MONGO_URI')
+print(mongo_uri)
+client = pymongo.MongoClient(mongo_uri)
 db = client["cargo-expreso-control"]
 general_guides_collection = db["guides"]
 paid_guides_collection = db["paid_guides"]
@@ -145,7 +152,6 @@ def save_guides_to_database(filename):
         else:
             guides_not_saved += 1
             print(f"{Fore.RED}already saved{Fore.RESET}")
-        time.sleep(.0025)
     print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
 
     if len(invalid_df) > 0:
@@ -261,7 +267,6 @@ def check_guides_paid(filename):
             print(
                 f"{Fore.MAGENTA}guide not found in general collection{Fore.RESET}"
             )
-        time.sleep(.0025)
     print(f"{saved_guides} guide{' was' if saved_guides == 1 else 's were'} saved and {guides_not_saved} {'is' if guides_not_saved == 1 else 'are'} already saved from this document\n")
 
     if is_guide_in_general_collection:
