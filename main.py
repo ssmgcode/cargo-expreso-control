@@ -3,7 +3,6 @@ import pandas as pd
 import pymongo
 from prettytable import PrettyTable
 from colorama import Fore
-import time
 from pymongo import collection
 import os
 from dotenv import load_dotenv
@@ -13,7 +12,6 @@ load_dotenv()
 # No string due to we're using the default port and we're developing in local
 # client = pymongo.MongoClient()
 mongo_uri = os.getenv('MONGO_URI')
-print(mongo_uri)
 client = pymongo.MongoClient(mongo_uri)
 db = client["cargo-expreso-control"]
 general_guides_collection = db["guides"]
