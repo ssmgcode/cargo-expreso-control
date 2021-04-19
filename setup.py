@@ -10,7 +10,7 @@ setup(
     entry_points="""
         [console_scripts]
         save-guides-to-database=main:save_guides_to_database
-        check-guides-paid=main:check_guides_paid
+        check-paid-guides=main:check_paid_guides
         find-paid-guides=main:find_paid_guides
     """,
 )
