@@ -299,6 +299,18 @@ def find_guide(guide_number: str, collection: collection.Collection):
 @click.command()
 @click.option('-g', '--guide')
 def find_paid_guides(guide):
+    done = False
+
+    def animate():
+        for c in itertools.cycle(['|', '/', '-', '\\']):
+            if done:
+                break
+            sys.stdout.write('\rLoading ' + c)
+            sys.stdout.flush()
+            time.sleep(0.1)
+    t = threading.Thread(target=animate)
+    t.start()
+
     if guide:
         paid_guides = paid_guides_collection.find({"_id": guide})
     else:
@@ -326,17 +338,6 @@ def find_paid_guides(guide):
     commission_value = 0
     settled_amount = 0
     counter = 1
-    done = False
-
-    def animate():
-        for c in itertools.cycle(['|', '/', '-', '\\']):
-            if done:
-                break
-            sys.stdout.write('\rLoading ' + c)
-            sys.stdout.flush()
-            time.sleep(0.1)
-    t = threading.Thread(target=animate)
-    t.start()
     for paid_guide in paid_guides:
         general_guide = general_guides_collection.find_one(paid_guide["_id"])
         # print(general_guide)
