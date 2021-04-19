@@ -6,6 +6,10 @@ from colorama import Fore
 from pymongo import collection
 import os
 from dotenv import load_dotenv
+import itertools
+import threading
+import time
+import sys
 
 load_dotenv()
 
@@ -295,9 +299,12 @@ def find_guide(guide_number: str, collection: collection.Collection):
 @click.command()
 @click.option('-g', '--guide')
 def find_paid_guides(guide):
-    paid_guides = paid_guides_collection.find()
+    if guide:
+        paid_guides = paid_guides_collection.find({"_id": guide})
+    else:
+        paid_guides = paid_guides_collection.find()
     table = PrettyTable()
-    table.title = f"PAID GUIDES {paid_guides.count()}"
+    table.title = f"PAID GUIDES ({paid_guides.count()})"
     table.field_names = [
         "#",
         "ID",
@@ -319,6 +326,17 @@ def find_paid_guides(guide):
     commission_value = 0
     settled_amount = 0
     counter = 1
+    done = False
+
+    def animate():
+        for c in itertools.cycle(['|', '/', '-', '\\']):
+            if done:
+                break
+            sys.stdout.write('\rLoading ' + c)
+            sys.stdout.flush()
+            time.sleep(0.1)
+    t = threading.Thread(target=animate)
+    t.start()
     for paid_guide in paid_guides:
         general_guide = general_guides_collection.find_one(paid_guide["_id"])
         # print(general_guide)
@@ -358,4 +376,6 @@ def find_paid_guides(guide):
         f"{Fore.GREEN}{commission_value:.2f}{Fore.RESET}",
         f"{Fore.GREEN}{settled_amount:.2f}{Fore.RESET}",
     ])
+    done = True
+    print()
     print(table)
